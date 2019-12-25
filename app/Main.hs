@@ -5,6 +5,7 @@ module Main where
 import Web.Scotty
 import Domain.Quote
 import Domain.QuoteRepository
+import qualified View.Quote as V
 import Data.Text as T
 import Control.Monad (forM_)
 import Control.Monad.IO.Class
@@ -14,11 +15,17 @@ import Text.Blaze.Html5.Attributes
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Network.URL (importURL)
 
-quotesHtml :: [Quote] -> H.Html
+quoteToListItemText :: V.ViewQuote -> T.Text
+quoteToListItemText (V.ViewQuote quote quotee) = T.concat ["\"", quote, "\" - ", T.pack $ show quotee]
+
+quoteHtml :: V.ViewQuote -> H.Html
+quoteHtml = H.li . fromString . T.unpack . quoteToListItemText
+
+quotesHtml :: [V.ViewQuote] -> H.Html
 quotesHtml quotes = do
   H.p "Quotes:"
   --H.ul $ forM_ quotes (H.li . fromString . T.unpack . desc)
-  H.ul $ forM_ quotes (H.li . fromString . show)
+  H.ul $ forM_ quotes quoteHtml
 
 quoteForm :: H.Html
 quoteForm = H.form H.! method "post" H.! enctype "multipart/form-data" H.! action "/quotes" $ do
@@ -66,9 +73,10 @@ template title' body' = H.docTypeHtml $ do
 homeView :: QuoteRepository -> ActionM ()
 homeView repo = do
   quotes <- liftIO $ getAll repo
-  html $ renderHtml $ homeHtml quotes
+  viewQuotes <- liftIO $ traverse V.toView quotes
+  html $ renderHtml $ homeHtml viewQuotes
 
-homeHtml :: [Quote] -> H.Html
+homeHtml :: [V.ViewQuote] -> H.Html
 homeHtml quotes = template "Home" quoteForm >> (quotesHtml quotes)
 
 main :: IO ()
