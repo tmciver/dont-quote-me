@@ -33,7 +33,7 @@ quoteForm = H.form H.! method "post" H.! enctype "multipart/form-data" H.! actio
   H.br
   H.input H.! type_ "textarea" H.! name "quote"
   H.br
-  H.span $ H.toHtml ("Who said it? (Enter \"Anonymous\" or a Wikidata URL):" :: Text)
+  H.span $ H.toHtml ("Who said it? (Enter \"Anonymous\" or a URL that returns .ttl):" :: Text)
   H.br
   H.input H.! type_ "textarea" H.! name "said_by"
   H.br
@@ -81,7 +81,7 @@ homeHtml quotes = template "Home" quoteForm >> (quotesHtml quotes)
 
 main :: IO ()
 main = do
-  repo <- liftIO inMemoryQuoteRepo
+  repo <- inMemoryQuoteRepo
   scotty 3000 $ do
     get "/" (homeView repo)
     post "/quotes" (handleQuotePost repo)
