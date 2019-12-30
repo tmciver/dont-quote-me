@@ -42,7 +42,8 @@ homeView repo = do
 
 main :: IO ()
 main = do
-  repo <- inMemoryQuoteRepo
+  --repo <- inMemoryQuoteRepo
+  repo <-fileBasedQuoteRepository
   scotty 3000 $ do
     get "/" (homeView repo)
     post "/quotes" (handleQuotePost repo)

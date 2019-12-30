@@ -2,6 +2,7 @@
 
 module Domain.QuoteRepository ( QuoteRepository
                              , inMemoryQuoteRepo
+                             , fileBasedQuoteRepository
                              , getAll
                              , save
                              ) where
@@ -11,6 +12,13 @@ import Control.Concurrent.STM
 import Data.UUID
 import Network.URL (importURL)
 import Data.Maybe (fromJust)
+import qualified System.Directory as D
+import qualified Data.Text as T
+import qualified Data.Map as M
+import Data.RDF
+import Text.RDF.RDF4H.TurtleSerializer
+import System.IO (withFile, IOMode(WriteMode))
+import System.FilePath
 
 type ID = UUID
 
@@ -32,3 +40,41 @@ inMemoryQuoteRepo = do
   (Quote.create "Life is what happens when you're busy making other plans." lennon) >>= save repo
   (Quote.create "It is difficult to soar with eagles when you work with turkeys." Anonymous) >>= save repo
   return repo
+
+quoteDir :: IO FilePath
+quoteDir = do
+  dir <- D.getXdgDirectory D.XdgData "dont-quote-me"
+  D.createDirectoryIfMissing True dir
+  pure dir
+
+quoteToPath :: FilePath -> Quote -> FilePath
+quoteToPath dir quote = dir </> (show $ getId quote)
+
+quoteToRdfGraph :: FilePath -> Quote -> RDF TList
+quoteToRdfGraph dir quote = let myEmptyGraph = empty :: RDF TList
+                                quoteTriple = (unode $ T.pack $ quoteToPath dir quote)
+                                typeTriple = triple
+                                  quoteTriple
+                                  (unode "rdf:type")
+                                  (unode "schema:Quotation")
+                                textTriple = triple
+                                  quoteTriple
+                                  (unode "schema:text")
+                                  (LNode (PlainL $ quoteText quote))
+                                g1 = addTriple myEmptyGraph typeTriple
+                            in
+                              addTriple g1 textTriple
+
+fileBasedQuoteRepository :: IO QuoteRepository
+fileBasedQuoteRepository = do
+  dir <- quoteDir
+  let mappings = PrefixMappings $ M.fromList [("schema", "http://schema.org/")]
+  pure $ Repo { getById = \_ -> return Nothing
+              , getAll = pure []
+              , save = \quote -> do
+                  let graph = quoteToRdfGraph dir quote
+                      docUrl = T.concat ["localhost:3000/quote/", T.pack $ show $ getId quote]
+                      serializer = TurtleSerializer (Just docUrl) mappings
+                      quoteFilePath = quoteToPath dir quote
+                  withFile quoteFilePath WriteMode (\handle -> hWriteRdf serializer handle graph)
+              }
