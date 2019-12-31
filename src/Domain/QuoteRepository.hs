@@ -10,7 +10,7 @@ module Domain.QuoteRepository ( QuoteRepository
 import Domain.Quote as Quote
 import Control.Concurrent.STM
 import Data.UUID
-import Network.URL (importURL)
+import Network.URL (URL, importURL, exportURL)
 import Data.Maybe (fromJust)
 import qualified System.Directory as D
 import qualified Data.Text as T
@@ -50,20 +50,34 @@ quoteDir = do
 quoteToPath :: FilePath -> Quote -> FilePath
 quoteToPath dir quote = dir </> (show $ getId quote)
 
+anonymousURI :: URL
+anonymousURI = fromJust $ importURL "http://www.wikidata.org/wiki/Q4233718"
+
+quoteeURI :: Quotee -> URL
+quoteeURI Anonymous = anonymousURI
+quoteeURI (Person url) = url
+
+quoteeURIText :: Quotee -> T.Text
+quoteeURIText quotee = T.pack $ exportURL $ quoteeURI quotee
+
 quoteToRdfGraph :: FilePath -> Quote -> RDF TList
-quoteToRdfGraph dir quote = let myEmptyGraph = empty :: RDF TList
-                                quoteTriple = (unode $ T.pack $ quoteToPath dir quote)
+quoteToRdfGraph uri quote = let myEmptyGraph = empty :: RDF TList
                                 typeTriple = triple
-                                  quoteTriple
+                                  (unode (T.pack uri))
                                   (unode "rdf:type")
                                   (unode "schema:Quotation")
                                 textTriple = triple
-                                  quoteTriple
+                                  (unode (T.pack uri))
                                   (unode "schema:text")
                                   (LNode (PlainL $ quoteText quote))
-                                g1 = addTriple myEmptyGraph typeTriple
+                                creatorTriple = triple
+                                  (unode (T.pack uri))
+                                  (unode "schema:spokenByCharacter")
+                                  (unode (quoteeURIText (saidBy quote)))
+                                g1 = addTriple myEmptyGraph creatorTriple
+                                g2 = addTriple g1 textTriple
                             in
-                              addTriple g1 textTriple
+                              addTriple g2 typeTriple
 
 fileBasedQuoteRepository :: IO QuoteRepository
 fileBasedQuoteRepository = do
