@@ -60,22 +60,23 @@ quoteeURI (Person url) = url
 quoteeURIText :: Quotee -> T.Text
 quoteeURIText quotee = T.pack $ exportURL $ quoteeURI quotee
 
-quoteToRdfGraph :: FilePath -> Quote -> RDF TList
-quoteToRdfGraph uri quote = let myEmptyGraph = empty :: RDF TList
-                                typeTriple = triple
-                                  (unode (T.pack uri))
-                                  (unode "rdf:type")
-                                  (unode "schema:Quotation")
-                                textTriple = triple
-                                  (unode (T.pack uri))
-                                  (unode "schema:text")
-                                  (LNode (PlainL $ quoteText quote))
-                                creatorTriple = triple
-                                  (unode (T.pack uri))
-                                  (unode "schema:spokenByCharacter")
-                                  (unode (quoteeURIText (saidBy quote)))
-                                g1 = addTriple myEmptyGraph creatorTriple
-                                g2 = addTriple g1 textTriple
+quoteToRdfGraph :: Quote -> RDF TList
+quoteToRdfGraph quote = let myEmptyGraph = empty :: RDF TList
+                            quoteNode = unode ""
+                            typeTriple = triple
+                              quoteNode
+                              (unode "rdf:type")
+                              (unode "schema:Quotation")
+                            textTriple = triple
+                              quoteNode
+                              (unode "schema:text")
+                              (LNode (PlainL $ quoteText quote))
+                            creatorTriple = triple
+                              quoteNode
+                              (unode "schema:spokenByCharacter")
+                              (unode (quoteeURIText (saidBy quote)))
+                            g1 = addTriple myEmptyGraph creatorTriple
+                            g2 = addTriple g1 textTriple
                             in
                               addTriple g2 typeTriple
 
@@ -86,8 +87,7 @@ fileBasedQuoteRepository = do
   pure $ Repo { getById = \_ -> return Nothing
               , getAll = pure []
               , save = \quote -> do
-                  let quoteUri = "/quote/" ++ (show $ getId quote)
-                      graph = quoteToRdfGraph quoteUri quote
+                  let graph = quoteToRdfGraph quote
                       docUrl = T.concat ["localhost:3000/quote/", T.pack $ show $ getId quote]
                       serializer = TurtleSerializer (Just docUrl) mappings
                       quoteFilePath = quoteToPath dir quote
