@@ -48,7 +48,7 @@ quoteDir = do
   pure dir
 
 quoteToPath :: FilePath -> Quote -> FilePath
-quoteToPath dir quote = dir </> (show $ getId quote)
+quoteToPath dir quote = dir </> (show $ getId quote) ++ ".ttl"
 
 anonymousURI :: URL
 anonymousURI = fromJust $ importURL "http://www.wikidata.org/wiki/Q4233718"
@@ -86,7 +86,8 @@ fileBasedQuoteRepository = do
   pure $ Repo { getById = \_ -> return Nothing
               , getAll = pure []
               , save = \quote -> do
-                  let graph = quoteToRdfGraph dir quote
+                  let quoteUri = "/quote/" ++ (show $ getId quote)
+                      graph = quoteToRdfGraph quoteUri quote
                       docUrl = T.concat ["localhost:3000/quote/", T.pack $ show $ getId quote]
                       serializer = TurtleSerializer (Just docUrl) mappings
                       quoteFilePath = quoteToPath dir quote
