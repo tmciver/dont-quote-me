@@ -9,16 +9,18 @@ module Domain.QuoteRepository ( QuoteRepository
 
 import Domain.Quote as Quote
 import Control.Concurrent.STM
-import Data.UUID
+import Data.UUID (UUID, fromString)
 import Network.URL (URL, importURL, exportURL)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, catMaybes, listToMaybe)
 import qualified System.Directory as D
 import qualified Data.Text as T
 import qualified Data.Map as M
 import Data.RDF
 import Text.RDF.RDF4H.TurtleSerializer
 import System.IO (withFile, IOMode(WriteMode))
-import System.FilePath
+import System.FilePath ((</>), splitFileName, splitExtension)
+import System.Directory (listDirectory)
+import Debug.Trace
 
 type ID = UUID
 
@@ -80,12 +82,49 @@ quoteToRdfGraph quote = let myEmptyGraph = empty :: RDF TList
                             in
                               addTriple g2 typeTriple
 
+nodesToQuote :: UUID -> Node -> Node -> Maybe Quote
+nodesToQuote uuid (UNode uriText) (LNode (PlainL quoteText)) = do
+  personURI <- importURL (T.unpack uriText)
+  pure $ Quote uuid quoteText (Person personURI)
+nodesToQuote _ quoteeURINode quoteTextNode | trace ("Quotee URI Node: " ++ show quoteeURINode ++ ", Quote text Node: " ++ show quoteTextNode) True = Nothing
+
+rdfToQuote :: UUID -> RDF TList -> Maybe Quote
+rdfToQuote uuid rdf = do
+  _ <- listToMaybe $ query rdf Nothing (Just (unode "rdf:type")) (Just (unode "schema:Quotation"))
+  quoteeTriple <- listToMaybe $ query rdf Nothing (Just (unode "schema:spokenByCharacter")) Nothing
+  quoteTextTriple <- listToMaybe $ query rdf Nothing (Just (unode "schema:text")) Nothing
+  let quotee = objectOf quoteeTriple
+      quoteText = objectOf quoteTextTriple
+  nodesToQuote uuid quotee quoteText
+
+quoteIDFromFile :: FilePath -> Maybe UUID
+quoteIDFromFile fp = fromString fileName
+  where (_, fileNameWithExt) = splitFileName fp
+        (fileName, _) = splitExtension fileNameWithExt
+
+quoteForFile :: FilePath -> FilePath -> IO (Maybe Quote)
+quoteForFile dir fileName = do
+  let tp = TurtleParser Nothing Nothing
+      fp = dir </> fileName
+      fp' = trace ("Attempting to open quote file: " ++ show fp) fp
+  eitherRDF <- parseFile tp fp'
+  let eitherRDF' = trace ("Either RDF: " ++ show eitherRDF) eitherRDF
+  let maybeQuote = do
+        rdf <- either (const Nothing) Just eitherRDF'
+        uuid <- quoteIDFromFile fp
+        rdfToQuote uuid rdf
+  pure maybeQuote
+
 fileBasedQuoteRepository :: IO QuoteRepository
 fileBasedQuoteRepository = do
   dir <- quoteDir
   let mappings = PrefixMappings $ M.fromList [("schema", "http://schema.org/")]
   pure $ Repo { getById = \_ -> return Nothing
-              , getAll = pure []
+              , getAll = do
+                  fs <- listDirectory dir
+                  quoteMaybes <- traverse (quoteForFile dir) fs
+                  let quoteMaybes' = trace ("Quote Maybes: " ++ show quoteMaybes) quoteMaybes
+                  pure $ catMaybes quoteMaybes'
               , save = \quote -> do
                   let graph = quoteToRdfGraph quote
                       docUrl = T.concat ["localhost:3000/quote/", T.pack $ show $ getId quote]
