@@ -20,7 +20,6 @@ import Text.RDF.RDF4H.TurtleSerializer
 import System.IO (withFile, IOMode(WriteMode))
 import System.FilePath ((</>), splitFileName, splitExtension)
 import System.Directory (listDirectory)
-import Debug.Trace
 
 type ID = UUID
 
@@ -62,20 +61,29 @@ quoteeURI (Person url) = url
 quoteeURIText :: Quotee -> T.Text
 quoteeURIText quotee = T.pack $ exportURL $ quoteeURI quotee
 
+rdfPrefix :: T.Text
+rdfPrefix = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
+schemaPrefix :: T.Text
+schemaPrefix = "http://schema.org/"
+
+mkPrefixedNode :: T.Text -> T.Text -> Node
+mkPrefixedNode prefix term = (unode (T.concat [prefix, term]))
+
 quoteToRdfGraph :: Quote -> RDF TList
 quoteToRdfGraph quote = let myEmptyGraph = empty :: RDF TList
-                            quoteNode = unode ""
+                            quoteNode = unode (T.concat ["http://localhost:3000/quote/", (T.pack . show) (getId quote)])
                             typeTriple = triple
                               quoteNode
-                              (unode "rdf:type")
-                              (unode "schema:Quotation")
+                              (mkPrefixedNode rdfPrefix "type")
+                              (mkPrefixedNode schemaPrefix "Quotation")
                             textTriple = triple
                               quoteNode
-                              (unode "schema:text")
+                              (mkPrefixedNode schemaPrefix "text")
                               (LNode (PlainL $ quoteText quote))
                             creatorTriple = triple
                               quoteNode
-                              (unode "schema:spokenByCharacter")
+                              (mkPrefixedNode schemaPrefix "spokenByCharacter")
                               (unode (quoteeURIText (saidBy quote)))
                             g1 = addTriple myEmptyGraph creatorTriple
                             g2 = addTriple g1 textTriple
@@ -86,13 +94,13 @@ nodesToQuote :: UUID -> Node -> Node -> Maybe Quote
 nodesToQuote uuid (UNode uriText) (LNode (PlainL quoteText)) = do
   personURI <- importURL (T.unpack uriText)
   pure $ Quote uuid quoteText (Person personURI)
-nodesToQuote _ quoteeURINode quoteTextNode | trace ("Quotee URI Node: " ++ show quoteeURINode ++ ", Quote text Node: " ++ show quoteTextNode) True = Nothing
+nodesToQuote _ quoteeURINode quoteTextNode = Nothing
 
 rdfToQuote :: UUID -> RDF TList -> Maybe Quote
 rdfToQuote uuid rdf = do
-  _ <- listToMaybe $ query rdf Nothing (Just (unode "rdf:type")) (Just (unode "schema:Quotation"))
-  quoteeTriple <- listToMaybe $ query rdf Nothing (Just (unode "schema:spokenByCharacter")) Nothing
-  quoteTextTriple <- listToMaybe $ query rdf Nothing (Just (unode "schema:text")) Nothing
+  _ <- listToMaybe $ query rdf Nothing (Just (mkPrefixedNode rdfPrefix "type")) (Just (mkPrefixedNode schemaPrefix "Quotation"))
+  quoteeTriple <- listToMaybe $ query rdf Nothing (Just (mkPrefixedNode schemaPrefix "spokenByCharacter")) Nothing
+  quoteTextTriple <- listToMaybe $ query rdf Nothing (Just (mkPrefixedNode schemaPrefix "text")) Nothing
   let quotee = objectOf quoteeTriple
       quoteText = objectOf quoteTextTriple
   nodesToQuote uuid quotee quoteText
@@ -106,11 +114,9 @@ quoteForFile :: FilePath -> FilePath -> IO (Maybe Quote)
 quoteForFile dir fileName = do
   let tp = TurtleParser Nothing Nothing
       fp = dir </> fileName
-      fp' = trace ("Attempting to open quote file: " ++ show fp) fp
-  eitherRDF <- parseFile tp fp'
-  let eitherRDF' = trace ("Either RDF: " ++ show eitherRDF) eitherRDF
+  eitherRDF <- parseFile tp fp
   let maybeQuote = do
-        rdf <- either (const Nothing) Just eitherRDF'
+        rdf <- either (const Nothing) Just eitherRDF
         uuid <- quoteIDFromFile fp
         rdfToQuote uuid rdf
   pure maybeQuote
@@ -123,8 +129,7 @@ fileBasedQuoteRepository = do
               , getAll = do
                   fs <- listDirectory dir
                   quoteMaybes <- traverse (quoteForFile dir) fs
-                  let quoteMaybes' = trace ("Quote Maybes: " ++ show quoteMaybes) quoteMaybes
-                  pure $ catMaybes quoteMaybes'
+                  pure $ catMaybes quoteMaybes
               , save = \quote -> do
                   let graph = quoteToRdfGraph quote
                       docUrl = T.concat ["localhost:3000/quote/", T.pack $ show $ getId quote]
