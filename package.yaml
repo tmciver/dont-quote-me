@@ -24,6 +24,15 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - text
+  - uuid
+  - url
+  - stm
+  - directory
+  - filepath
+  - containers
+  - rdf4h
 
 executables:
   dont-quote-me-exe:
@@ -35,6 +44,10 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - dont-quote-me
+    - text
+    - url
+    - blaze-html
+    - scotty
 
 tests:
   dont-quote-me-test:
