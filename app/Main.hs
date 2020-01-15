@@ -43,7 +43,8 @@ homeView repo = do
 main :: IO ()
 main = do
   --repo <- inMemoryQuoteRepo
-  repo <-fileBasedQuoteRepository
+  --repo <-fileBasedQuoteRepository
+  let repo = linkedDataQuoteRepository
   scotty 3000 $ do
     get "/" (homeView repo)
     post "/quotes" (handleQuotePost repo)

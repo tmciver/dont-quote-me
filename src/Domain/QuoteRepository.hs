@@ -3,6 +3,7 @@
 module Domain.QuoteRepository ( QuoteRepository
                              , inMemoryQuoteRepo
                              , fileBasedQuoteRepository
+                             , linkedDataQuoteRepository
                              , getAll
                              , save
                              , ldQuoteContainer
@@ -20,9 +21,11 @@ import qualified Data.Text as T
 import qualified Data.Map as M
 import Data.RDF
 import Text.RDF.RDF4H.TurtleSerializer
-import System.IO (withFile, IOMode(WriteMode))
+import System.IO (withFile, IOMode(WriteMode), Handle)
 import System.FilePath ((</>), splitFileName, splitExtension)
 import System.Directory (listDirectory)
+import Network.HTTP.Simple as HTTP
+import qualified System.IO.Temp as Temp
 
 type ID = UUID
 
@@ -127,6 +130,9 @@ quoteForFile dir fileName = do
         rdfToQuote uuid rdf
   pure maybeQuote
 
+quoteToUrl :: Quote -> URL
+quoteToUrl quote = fromJust $ importURL $ "localhost:3000/quote/" ++ show (getId quote)
+
 fileBasedQuoteRepository :: IO QuoteRepository
 fileBasedQuoteRepository = do
   dir <- quoteDir
@@ -182,8 +188,33 @@ getAllQuotes baseUrl = do
   let quotes = catMaybes maybeQuotes
   pure quotes
 
+saveQuote :: Quote -> IO ()
+saveQuote quote = do
+  let graph = quoteToRdfGraph quote
+      urlStr = T.pack $ exportURL $ quoteToUrl quote
+  Temp.withSystemTempFile "quote.rdf" (saveGraph graph urlStr)
+  where mkRequest :: FilePath -> HTTP.Request
+        mkRequest filePath = setRequestBodyFile filePath
+                             $ setRequestHeader "Content-Type" ["text/turtle"]
+                             $ setRequestPath "/quote"
+                             $ setRequestHost "http://localhost"
+                             $ setRequestMethod "POST"
+                             $ defaultRequest
+
+        sendQuote :: FilePath -> IO ()
+        sendQuote filePath = HTTP.httpNoBody req >> pure ()
+          where req = mkRequest filePath
+
+        saveGraph :: RDF TList -> T.Text -> FilePath -> Handle -> IO ()
+        saveGraph graph urlStr filePath handle = do
+          let mappings = PrefixMappings M.empty
+              serializer = TurtleSerializer (Just urlStr) mappings
+          _ <- hWriteRdf serializer handle graph
+          sendQuote filePath
+
 linkedDataQuoteRepository :: QuoteRepository
 linkedDataQuoteRepository =
   Repo { getById = \_ -> return Nothing
        , getAll = getAllQuotes ldQuoteContainer
+       , save = saveQuote
        }
