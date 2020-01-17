@@ -33,6 +33,8 @@ library:
   - filepath
   - containers
   - rdf4h
+  - http-conduit
+  - temporary
 
 executables:
   dont-quote-me-exe:
