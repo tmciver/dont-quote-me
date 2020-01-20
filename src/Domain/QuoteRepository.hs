@@ -9,6 +9,7 @@ module Domain.QuoteRepository ( QuoteRepository
                              , ldQuoteContainer
                              , getQuoteUrls
                              , getAllQuotes
+                             , quoteToRdfGraph
                              ) where
 
 import Domain.Quote as Quote
@@ -192,12 +193,14 @@ saveQuote :: Quote -> IO ()
 saveQuote quote = do
   let graph = quoteToRdfGraph quote
       urlStr = T.pack $ exportURL $ quoteToUrl quote
-  Temp.withSystemTempFile "quote.rdf" (saveGraph graph urlStr)
+  tempFilePath <- Temp.emptySystemTempFile "quote.rdf"
+  _ <- saveGraph graph urlStr tempFilePath
+  sendQuote tempFilePath
   where mkRequest :: FilePath -> HTTP.Request
         mkRequest filePath = setRequestBodyFile filePath
                              $ setRequestHeader "Content-Type" ["text/turtle"]
-                             $ setRequestPath "/quote"
-                             $ setRequestHost "http://localhost"
+                             $ setRequestPath "/quotes"
+                             $ setRequestHost "localhost"
                              $ setRequestMethod "POST"
                              $ defaultRequest
 
@@ -205,12 +208,11 @@ saveQuote quote = do
         sendQuote filePath = HTTP.httpNoBody req >> pure ()
           where req = mkRequest filePath
 
-        saveGraph :: RDF TList -> T.Text -> FilePath -> Handle -> IO ()
-        saveGraph graph urlStr filePath handle = do
+        saveGraph :: RDF TList -> T.Text -> FilePath -> IO ()
+        saveGraph graph urlStr filePath = do
           let mappings = PrefixMappings M.empty
               serializer = TurtleSerializer (Just urlStr) mappings
-          _ <- hWriteRdf serializer handle graph
-          sendQuote filePath
+          withFile filePath WriteMode (\handle -> hWriteRdf serializer handle graph)
 
 linkedDataQuoteRepository :: QuoteRepository
 linkedDataQuoteRepository =
