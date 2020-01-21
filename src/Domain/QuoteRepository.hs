@@ -1,11 +1,9 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
-module Domain.QuoteRepository ( QuoteRepository
-                             , inMemoryQuoteRepo
+module Domain.QuoteRepository ( Repository(..)
+                              , QuoteRepository
                              , fileBasedQuoteRepository
                              , linkedDataQuoteRepository
-                             , getAll
-                             , save
                              , ldQuoteContainer
                              , getQuoteUrls
                              , getAllQuotes
@@ -13,7 +11,6 @@ module Domain.QuoteRepository ( QuoteRepository
                              ) where
 
 import Domain.Quote as Quote
-import Control.Concurrent.STM
 import Data.UUID (UUID, fromString)
 import Network.URL (URL, importURL, exportURL)
 import Data.Maybe (fromJust, fromMaybe, catMaybes, listToMaybe)
@@ -36,18 +33,6 @@ data Repository i a = Repo { getById :: i -> IO (Maybe a)
                            }
 
 type QuoteRepository = Repository ID Quote
-
-inMemoryQuoteRepo :: IO QuoteRepository
-inMemoryQuoteRepo = do
-  quotesTVar <- newTVarIO []
-  let repo = Repo { getById = \_ -> return Nothing
-                  , getAll = readTVarIO quotesTVar
-                  , save = \quote -> atomically $ modifyTVar' quotesTVar (quote:)
-                  }
-      lennon = Person $ fromJust $ importURL "http://dbpedia.org/data/John_Lennon.ttl"
-  (Quote.create "Life is what happens when you're busy making other plans." lennon) >>= save repo
-  (Quote.create "It is difficult to soar with eagles when you work with turkeys." Anonymous) >>= save repo
-  return repo
 
 quoteDir :: IO FilePath
 quoteDir = do
