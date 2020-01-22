@@ -6,7 +6,8 @@ import Web.Scotty
 import Domain.Quote
 import Domain.QuoteRepository
 --import qualified Domain.QuoteRepository.InMemoryQuoteRepository as InMemoryQuoteRepository
-import qualified Domain.QuoteRepository.FileBasedQuoteRepository as FileBasedQuoteRepository
+--import qualified Domain.QuoteRepository.FileBasedQuoteRepository as FileBasedQuoteRepository
+import qualified Domain.QuoteRepository.LinkedDataQuoteRepository as LinkedDataQuoteRepository
 import qualified View.Quote as V
 import qualified View.Html as HTML
 import Data.Text as T
@@ -45,8 +46,8 @@ homeView repo = do
 main :: IO ()
 main = do
   --repo <- InMemoryQuoteRepository.create
-  repo <-FileBasedQuoteRepository.create
-  --let repo = linkedDataQuoteRepository
+  --repo <-FileBasedQuoteRepository.create
+  let repo = LinkedDataQuoteRepository.create
   scotty 3000 $ do
     get "/" (homeView repo)
     post "/quotes" (handleQuotePost repo)
