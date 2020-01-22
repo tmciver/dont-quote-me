@@ -52,8 +52,8 @@ getQuote quoteUrl = do
 ldQuoteContainer :: URL
 ldQuoteContainer = fromJust $ importURL "http://localhost/quotes/"
 
-getAllQuotes :: URL -> IO [Quote]
-getAllQuotes baseUrl = do
+getAllQuotes :: IO [Quote]
+getAllQuotes = do
   quoteUrls <- getQuoteUrls ldQuoteContainer
   maybeQuotes <- mapM getQuote quoteUrls
   let quotes = catMaybes maybeQuotes
@@ -86,6 +86,6 @@ saveQuote quote = do
 
 create :: QuoteRepository
 create = Repo { getById = \_ -> return Nothing
-              , getAll = getAllQuotes ldQuoteContainer
+              , getAll = getAllQuotes
               , save = saveQuote
               }
