@@ -18,7 +18,6 @@ quoteHtml = H.li . fromString . T.unpack . quoteToListItemText
 quotesHtml :: [V.ViewQuote] -> H.Html
 quotesHtml quotes = do
   H.p "Quotes:"
-  --H.ul $ forM_ quotes (H.li . fromString . T.unpack . desc)
   H.ul $ forM_ quotes quoteHtml
 
 quoteForm :: H.Html
@@ -27,7 +26,7 @@ quoteForm = H.form H.! method "post" H.! enctype "multipart/form-data" H.! actio
   H.br
   H.input H.! type_ "textarea" H.! name "quote"
   H.br
-  H.span $ H.toHtml ("Who said it? (Enter \"Anonymous\" or a URL that returns .ttl):" :: Text)
+  H.span $ H.toHtml ("Who said it? (Enter \"Anonymous\" or a URL that identifies a person):" :: Text)
   H.br
   H.input H.! type_ "textarea" H.! name "said_by"
   H.br
