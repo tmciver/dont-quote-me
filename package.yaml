@@ -36,6 +36,7 @@ library:
   - temporary
   - bytestring
   - errors
+  - exceptions
 
 executables:
   dont-quote-me-exe:
