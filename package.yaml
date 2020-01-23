@@ -35,6 +35,7 @@ library:
   - http-conduit
   - temporary
   - bytestring
+  - errors
 
 executables:
   dont-quote-me-exe:

@@ -4,6 +4,7 @@ module Domain.QuoteRepository.FileBasedQuoteRepository (
   Domain.QuoteRepository.FileBasedQuoteRepository.create
   ) where
 
+import Control.Error.Util (hush)
 import Domain.QuoteRepository (Repository(..), QuoteRepository)
 import Domain.Quote as Quote
 import qualified DontQuoteMe.Data.RDF as QRDF
@@ -31,7 +32,7 @@ quoteForFile dir fileName = do
       fp = dir </> fileName
   eitherRDF <- parseFile tp fp
   let maybeQuote = do
-        rdf <- either (const Nothing) Just eitherRDF -- use `hush` from Control.Error.Util
+        rdf <- hush eitherRDF
         uuid <- quoteIDFromFile fp
         QRDF.rdfToQuote uuid rdf
   pure maybeQuote
