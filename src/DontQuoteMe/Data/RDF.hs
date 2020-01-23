@@ -8,6 +8,15 @@ import Data.RDF
 import qualified Data.Text as T
 import Network.URL (importURL)
 import Data.Maybe (listToMaybe)
+import Data.Functor ((<&>))
+import Control.Monad.Catch (MonadThrow, throwM)
+import Control.Exception.Base
+import Data.Typeable
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Network.URL (URL, exportURL)
+import qualified System.IO.Temp as Temp
+import Data.ByteString as BS hiding (empty)
+import Network.HTTP.Simple (parseRequest, httpBS, setRequestHeader, getResponseBody)
 
 mkPrefixedNode :: T.Text -> T.Text -> Node
 mkPrefixedNode prefix term = (unode (T.concat [prefix, term]))
@@ -55,3 +64,23 @@ rdfToQuote uuid rdf = do
   let quotee = objectOf quoteeTriple
       quoteText = objectOf quoteTextTriple
   nodesToQuote uuid quotee quoteText
+
+data ParseException = RDF4HParseException ParseFailure
+  deriving Typeable
+
+instance Show ParseException where
+  show (RDF4HParseException (ParseFailure s)) = s
+
+instance Exception ParseException
+
+getTurtle :: (MonadIO m, MonadThrow m) => URL -> m (RDF TList)
+getTurtle url = do
+  req <- (parseRequest $ exportURL url) <&> setRequestHeader "Accept" ["text/turtle"]
+  resp <- liftIO $ httpBS req
+  tmpFilePath <- liftIO $ Temp.emptySystemTempFile "quote.rdf"
+  liftIO $ BS.writeFile tmpFilePath (getResponseBody resp)
+  eitherRDF <- liftIO $ parseFile (TurtleParser Nothing Nothing) tmpFilePath
+  case eitherRDF of
+    Left e -> throwM $ RDF4HParseException e
+    Right rdf -> pure rdf
+
