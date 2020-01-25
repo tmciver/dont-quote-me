@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module View.Quote ( ViewQuote(..)
-                  , ViewQuotee(..)
-                  , toView) where
+module DontQuoteMe.View.Quote (
+  ViewQuote(..),
+  ViewQuotee(..),
+  toView) where
 
 import qualified Data.Text as T
-import qualified Domain.Quote as Domain
+import qualified DontQuoteMe.Domain.Quote as DontQuoteMe.Domain
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Catch (MonadThrow)
 import Network.URL (URL)
@@ -39,8 +40,8 @@ nameFromURL url = do
   name <- textFromNode $ objectOf nameTriple
   return name
 
-toView :: (MonadIO m, MonadThrow m) => Domain.Quote -> m ViewQuote
-toView (Domain.Quote _ quote Domain.Anonymous) = pure $ ViewQuote quote Anonymous
-toView (Domain.Quote _ quote (Domain.Person url)) = do
+toView :: (MonadIO m, MonadThrow m) => DontQuoteMe.Domain.Quote -> m ViewQuote
+toView (DontQuoteMe.Domain.Quote _ quote DontQuoteMe.Domain.Anonymous) = pure $ ViewQuote quote Anonymous
+toView (DontQuoteMe.Domain.Quote _ quote (DontQuoteMe.Domain.Person url)) = do
   name <- nameFromURL url
   pure $ ViewQuote quote $ Quotee name

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Domain.Quote where
+module DontQuoteMe.Domain.Quote where
 
 import Data.Text
 import Network.URL (URL)

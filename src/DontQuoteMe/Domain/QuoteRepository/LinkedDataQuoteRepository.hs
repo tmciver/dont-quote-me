@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
-module Domain.QuoteRepository.LinkedDataQuoteRepository (
-  Domain.QuoteRepository.LinkedDataQuoteRepository.create
+module DontQuoteMe.Domain.QuoteRepository.LinkedDataQuoteRepository (
+  DontQuoteMe.Domain.QuoteRepository.LinkedDataQuoteRepository.create
   ) where
 
 import Data.UUID (UUID, fromString)
@@ -14,8 +14,8 @@ import qualified DontQuoteMe.Data.RDF as QRDF
 import System.IO (withFile, IOMode(WriteMode))
 import Network.HTTP.Simple as HTTP
 import qualified System.IO.Temp as Temp
-import Domain.QuoteRepository
-import Domain.Quote as Quote
+import DontQuoteMe.Domain.QuoteRepository
+import DontQuoteMe.Domain.Quote as Quote
 
 quoteToUrl :: Quote -> URL
 quoteToUrl quote = fromJust $ importURL $ "localhost:3000/quote/" ++ show (getId quote)

@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Domain.QuoteRepository.InMemoryQuoteRepository (
-  Domain.QuoteRepository.InMemoryQuoteRepository.create
+module DontQuoteMe.Domain.QuoteRepository.InMemoryQuoteRepository (
+  DontQuoteMe.Domain.QuoteRepository.InMemoryQuoteRepository.create
   ) where
 
-import Domain.QuoteRepository (Repository(..), QuoteRepository)
-import Domain.Quote as Quote
+import DontQuoteMe.Domain.QuoteRepository (Repository(..), QuoteRepository)
+import DontQuoteMe.Domain.Quote as Quote
 import Control.Concurrent.STM
 import Data.Maybe (fromJust)
 import Network.URL (importURL)

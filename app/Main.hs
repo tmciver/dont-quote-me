@@ -3,12 +3,12 @@
 module Main where
 
 import Web.Scotty
-import Domain.Quote
-import Domain.QuoteRepository
+import DontQuoteMe.Domain.Quote
+import DontQuoteMe.Domain.QuoteRepository
 --import qualified Domain.QuoteRepository.InMemoryQuoteRepository as InMemoryQuoteRepository
 --import qualified Domain.QuoteRepository.FileBasedQuoteRepository as FileBasedQuoteRepository
-import qualified Domain.QuoteRepository.LinkedDataQuoteRepository as LinkedDataQuoteRepository
-import qualified View.Quote as V
+import qualified DontQuoteMe.Domain.QuoteRepository.LinkedDataQuoteRepository as LinkedDataQuoteRepository
+import qualified DontQuoteMe.View.Quote as V
 import qualified View.Html as HTML
 import Data.Text as T
 import Control.Monad.IO.Class

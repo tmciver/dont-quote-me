@@ -2,7 +2,7 @@
 
 module DontQuoteMe.Data.RDF where
 
-import Domain.Quote
+import DontQuoteMe.Domain.Quote
 import Data.UUID (UUID)
 import Data.RDF
 import qualified Data.Text as T

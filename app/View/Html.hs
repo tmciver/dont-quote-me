@@ -3,7 +3,7 @@
 module View.Html where
 
 import qualified Text.Blaze.Html5 as H
-import qualified View.Quote as V
+import qualified DontQuoteMe.View.Quote as V
 import Data.Text as T
 import Control.Monad (forM_)
 import Text.Blaze.Html5.Attributes

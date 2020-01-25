@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Domain.QuoteRepository.FileBasedQuoteRepository (
-  Domain.QuoteRepository.FileBasedQuoteRepository.create
+module DontQuoteMe.Domain.QuoteRepository.FileBasedQuoteRepository (
+  DontQuoteMe.Domain.QuoteRepository.FileBasedQuoteRepository.create
   ) where
 
 import Control.Error.Util (hush)
-import Domain.QuoteRepository (Repository(..), QuoteRepository)
-import Domain.Quote as Quote
+import DontQuoteMe.Domain.QuoteRepository (Repository(..), QuoteRepository)
+import DontQuoteMe.Domain.Quote as Quote
 import qualified DontQuoteMe.Data.RDF as QRDF
 import qualified Data.Map as M
 import qualified Data.Text as T

@@ -1,8 +1,8 @@
-module Domain.QuoteRepository ( Repository(..)
-                              , QuoteRepository
-                              ) where
+module DontQuoteMe.Domain.QuoteRepository (
+  Repository(..),
+  QuoteRepository) where
 
-import Domain.Quote
+import DontQuoteMe.Domain.Quote
 import Data.UUID (UUID)
 
 data Repository i a = Repo { getById :: i -> IO (Maybe a)
