@@ -52,6 +52,7 @@ executables:
     - url
     - blaze-html
     - scotty
+    - dhall
 
 tests:
   dont-quote-me-test:
