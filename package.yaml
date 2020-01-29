@@ -50,6 +50,8 @@ executables:
     - dont-quote-me
     - text
     - url
+    - transformers
+    - aeson
     - blaze-html
     - scotty
 
