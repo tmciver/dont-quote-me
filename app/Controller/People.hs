@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Controller.Query where
+module Controller.People where
 
 import Web.Scotty
 import DontQuoteMe.Domain.PersonQuery
@@ -12,6 +12,6 @@ instance FromJSON Person
 
 get :: PersonQuery -> ActionM ()
 get pq = do
-  q <- param "q"
+  q <- param "nameHas"
   results <- liftIO (pq q)
   json results

@@ -9,7 +9,7 @@ import Network.Wai.Middleware.Static
 import qualified DontQuoteMe.Domain.QuoteRepository.LinkedDataQuoteRepository as LinkedDataQuoteRepository
 import qualified DontQuoteMe.Domain.PersonQuery.InMemoryPersonQuery as InMemoryPersonQuery
 import qualified Controller.Quote as QuoteController
-import qualified Controller.Query as QueryController
+import qualified Controller.People as PeopleController
 import qualified Controller.Home as HomeController
 
 main :: IO ()
@@ -21,5 +21,5 @@ main = do
   scotty 3000 $ do
     middleware $ staticPolicy (noDots >-> addBase "static")
     get "/" (HomeController.get repo)
-    get "/query" (QueryController.get personQuery)
+    get "/people" (PeopleController.get personQuery)
     post "/quotes" (QuoteController.post repo)
