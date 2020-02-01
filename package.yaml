@@ -54,6 +54,7 @@ executables:
     - aeson
     - blaze-html
     - scotty
+    - wai-middleware-static
 
 tests:
   dont-quote-me-test:

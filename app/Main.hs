@@ -3,6 +3,7 @@
 module Main where
 
 import Web.Scotty
+import Network.Wai.Middleware.Static
 --import qualified Domain.QuoteRepository.InMemoryQuoteRepository as InMemoryQuoteRepository
 --import qualified Domain.QuoteRepository.FileBasedQuoteRepository as FileBasedQuoteRepository
 import qualified DontQuoteMe.Domain.QuoteRepository.LinkedDataQuoteRepository as LinkedDataQuoteRepository
@@ -18,6 +19,7 @@ main = do
   let repo = LinkedDataQuoteRepository.create
   let personQuery = InMemoryPersonQuery.create
   scotty 3000 $ do
+    middleware $ staticPolicy (noDots >-> addBase "static")
     get "/" (HomeController.get repo)
     get "/query" (QueryController.get personQuery)
     post "/quotes" (QuoteController.post repo)
