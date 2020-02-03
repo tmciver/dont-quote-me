@@ -30,7 +30,7 @@ quoteForm = H.form ! A.method "post" ! A.enctype "multipart/form-data" ! action 
   H.br
   H.input ! A.type_ "textarea" ! A.name "quote" ! A.id "quote-text"
   H.br
-  H.span $ H.toHtml ("Who said it? (Enter \"Anonymous\" or a URL that identifies a person):" :: Text)
+  H.span $ H.toHtml ("Who said it? (type at least three characters of a name or a URL that identifies a person):" :: Text)
   H.br
   H.input ! A.type_ "textarea" ! A.name "said_by" ! A.id "quotee-text"
   H.br
