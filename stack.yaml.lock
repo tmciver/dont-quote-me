@@ -12,6 +12,13 @@ packages:
   original:
     hackage: rdf4h-3.1.1
 - completed:
+    hackage: hsparql-0.3.6@sha256:654b8145e1f018b7f2024b16518e43a0c67d635f6b6907ca1c666b840c98ad04,2030
+    pantry-tree:
+      size: 438
+      sha256: 49ac248bde4d0b976c27eb35596f17eec69c2da5cec230ef9ba5cb48922af430
+  original:
+    hackage: hsparql-0.3.6
+- completed:
     hackage: hgal-2.0.0.2@sha256:13d58afd0668b9cb881c612eff8488a0e289edd4bbffa893df4beee60cfeb73b,653
     pantry-tree:
       size: 412
