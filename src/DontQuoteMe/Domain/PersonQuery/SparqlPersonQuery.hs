@@ -1,10 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module DontQuoteMe.Domain.PersonQuery.SparqlPersonQuery where
+module DontQuoteMe.Domain.PersonQuery.SparqlPersonQuery (create) where
 
 import DontQuoteMe.Domain.PersonQuery
 import qualified Data.Text as T
+import Data.RDF (Node(LNode, UNode), LValue(PlainLL))
 import Database.HSparql.QueryGenerator
+import Database.HSparql.Connection
+import Control.Monad.Catch (MonadThrow, throwM)
+import Data.Maybe (maybe)
+import Data.Typeable
+import Control.Exception.Base
 
 personSparqlQuery :: T.Text -> Query SelectQuery
 personSparqlQuery q = do
@@ -12,7 +18,6 @@ personSparqlQuery q = do
   dbo <- prefix "dbo" (iriRef "http://dbpedia.org/ontology/")
   rdf <- prefix "rdf" (iriRef "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 
-  -- x <- var
   name <- var
   uri <- var
 
@@ -24,5 +29,20 @@ personSparqlQuery q = do
 
   selectVars [name, uri]
 
+data SparqlException = InvalidQueryResultBindings
+  deriving (Show, Typeable)
+instance Exception SparqlException
+
+bindingsToPerson :: MonadThrow m => [BindingValue] -> m Person
+bindingsToPerson [(Bound (LNode (PlainLL name' _))), (Bound (UNode uri'))] =
+  pure $ Person uri' name'
+bindingsToPerson _ = throwM InvalidQueryResultBindings
+
+personQueryDbpedia :: PersonQuery
+personQueryDbpedia q = do
+  maybeResults <- selectQuery "http://dbpedia.org/sparql" (personSparqlQuery $ T.pack q)
+  let maybePeople = maybeResults >>= traverse bindingsToPerson
+  pure $ maybe [] id maybePeople
+
 create :: PersonQuery
-create  = undefined
+create = personQueryDbpedia
