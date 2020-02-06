@@ -8,7 +8,7 @@ import Data.RDF (Node(LNode, UNode), LValue(PlainLL))
 import Database.HSparql.QueryGenerator
 import Database.HSparql.Connection
 import Control.Monad.Catch (MonadThrow, throwM)
-import Data.Maybe (maybe)
+import Data.Maybe (fromMaybe)
 import Data.Typeable
 import Control.Exception.Base
 
@@ -38,11 +38,23 @@ bindingsToPerson [(Bound (LNode (PlainLL name' _))), (Bound (UNode uri'))] =
   pure $ Person uri' name'
 bindingsToPerson _ = throwM InvalidQueryResultBindings
 
+-- |Converts each space character in the string to the two-character sequence
+-- "\ ". This is done so that a SPARQL query containing a space will succeed.
+escapeSpace :: String -> String
+escapeSpace s = s >>= f
+  where f ' ' = "\\ "
+        f c = [c]
+
+sanitize :: String -> String
+sanitize = escapeSpace
+
 personQueryDbpedia :: PersonQuery
 personQueryDbpedia q = do
-  maybeResults <- selectQuery "http://dbpedia.org/sparql" (personSparqlQuery $ T.pack q)
+  let q' = sanitize q
+      query = (personSparqlQuery $ T.pack q')
+  maybeResults <- selectQuery "http://dbpedia.org/sparql" query
   let maybePeople = maybeResults >>= traverse bindingsToPerson
-  pure $ maybe [] id maybePeople
+  pure $ fromMaybe [] maybePeople
 
 create :: PersonQuery
 create = personQueryDbpedia
