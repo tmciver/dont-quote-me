@@ -35,6 +35,11 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - dont-quote-me
+    - scotty
+    - tls
+    - data-default-class
+    - bytestring
+    - network
 
 tests:
   dont-quote-me-test:

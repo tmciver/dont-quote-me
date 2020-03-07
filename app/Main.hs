@@ -3,18 +3,30 @@
 module Main where
 
 import Web.Scotty
-import Network.TLS
-import Network.Socket
+import qualified Network.TLS as T
+import qualified Network.TLS.Extra as TE
+import Network.Socket hiding (send, recv)
 import Data.Default.Class (def)
-
-getPort :: IO Int
-getPort = pure 8443
-
-addrProtocol :: ProtocolNumber
-addrProtocol = 0
+import Control.Exception (IOException, try)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy.Char8 as L8
+import Data.Maybe (fromMaybe, listToMaybe)
+import System.Environment (getArgs)
+import Control.Concurrent (forkIO)
 
 getSocket :: IO Socket
-getSocket = socket AF_INET Stream addrProtocol
+getSocket = socket AF_INET Stream defaultProtocol
+
+tlsPort :: IO PortNumber
+tlsPort = getArgs >>= pure . fromMaybe 8443 . listToMaybe . (map read) 
+
+recv :: T.Context -> IO (Either IOException BS.ByteString)
+recv ctx = try $ T.recvData ctx
+
+send :: T.Context
+     -> [BS.ByteString]
+     -> IO (Either IOException ())
+send ctx bs = try $ T.sendData ctx $ L8.fromChunks $ bs
 
 pong ctx = do
   res <- recv ctx
@@ -55,7 +67,7 @@ loop _ (Left msg) =
 
 server :: IO ()
 server = do
-  port <- getPort
+  port <- tlsPort
   sock <- getSocket
   _ <- bind sock $ SockAddrInet port $ tupleToHostAddress (127, 0, 0, 1)
   _ <- listen sock 256
